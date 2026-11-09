@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASL Real-Time Translator // Neubrutalism Edition</title>
+    <style>
+        :root {
+            --bg-canvas: #f4efe6;
+            --surface: #ffffff;
+            --border-color: #000000;
+            --border-width: 3px;
+            --hard-shadow: 5px 5px 0px #000000;
+            --hard-shadow-sm: 3px 3px 0px #000000;
+            --hard-shadow-lg: 8px 8px 0px #000000;
+            
+            /* High-Contrast Neubrutalism Palette (ZERO PURPLE) */
+            --nb-yellow: #ffe600;
+            --nb-cyan: #00f0ff;
+            --nb-green: #00e599;
+            --nb-coral: #ffb800;
+            --nb-red: #ff4757;
+            --nb-dark: #000000;
+            --nb-card: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-canvas);
+            background-image: radial-gradient(#000000 1.2px, transparent 1.2px);
+            background-size: 24px 24px;
+            color: #000000;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 16px 40px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .title-badge {
+            display: inline-block;
+            background: var(--nb-yellow);
+            color: #000000;
+            font-size: 0.8rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 6px 14px;
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: var(--hard-shadow-sm);
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: 2.4rem;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            text-transform: uppercase;
+            color: #000000;
+            line-height: 1.1;
+            text-shadow: 2px 2px 0px #ffffff;
+        }
+
+        header p {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #333333;
+            margin-top: 6px;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 820px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        /* Video Display Card */
+        .video-card {
+            width: 100%;
+            background: var(--surface);
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: var(--hard-shadow-lg);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .video-header-bar {
+            background: #ffffff;
+            border-bottom: var(--border-width) solid var(--border-color);
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 800;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .live-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #ff4757;
+            color: #ffffff;
+            padding: 4px 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 2px 2px 0px #000000;
+            font-weight: 900;
+            font-size: 0.75rem;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #ffffff;
+            border-radius: 50%;
+            animation: blink 1.2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .sign-status-badge {
+            background: var(--nb-cyan);
+            color: #000000;
+            padding: 4px 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 2px 2px 0px #000000;
+            font-weight: 800;
+            font-size: 0.85rem;
+        }
+
+        .video-feed-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background: #000000;
+        }
+
+        #video-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Translation Output Card */
+        .output-card {
+            width: 100%;
+            background: var(--surface);
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: var(--hard-shadow);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .output-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .output-title {
+            font-size: 0.85rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: var(--nb-yellow);
+            padding: 4px 10px;
+            border: 2px solid #000000;
+            border-radius: 4px;
+            box-shadow: 2px 2px 0px #000000;
+        }
+
+        .translation-box {
+            background: #fffdf0;
+            border: var(--border-width) solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: var(--hard-shadow-sm);
+            padding: 16px 20px;
+            min-height: 72px;
+            display: flex;
+            align-items: center;
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #000000;
+            word-break: break-word;
+            line-height: 1.25;
+            margin-bottom: 20px;
+        }
+
+        .translation-box.empty {
+            color: #888888;
+            font-size: 1.2rem;
+            font-weight: 700;
+            font-style: italic;
+        }
+
+        /* Tactile Push Buttons */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+        }
+
+        .btn {
+            border: var(--border-width) solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: var(--hard-shadow-sm);
+            padding: 12px 14px;
+            font-size: 0.9rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.08s ease-in-out;
+            color: #000000;
+            user-select: none;
+        }
+
+        .btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0px #000000;
+        }
+
+        .btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px #000000;
+        }
+
+        .btn-speak {
+            background: var(--nb-cyan);
+        }
+
+        .btn-copy {
+            background: var(--nb-green);
+        }
+
+        .btn-space {
+            background: #ffffff;
+        }
+
+        .btn-backspace {
+            background: var(--nb-coral);
+        }
+
+        .btn-clear {
+            background: var(--nb-red);
+            color: #ffffff;
+        }
+
+        .btn-toggle-guide {
+            background: var(--nb-yellow);
+            grid-column: 1 / -1;
+            margin-top: 4px;
+        }
+
+        /* Alphabet Reference Grid */
+        .alphabet-guide-card {
+            width: 100%;
+            background: #ffffff;
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: var(--hard-shadow-sm);
+            border-radius: 10px;
+            padding: 20px;
+            display: none;
+        }
+
+        .alphabet-guide-card.open {
+            display: block;
+        }
+
+        .guide-header {
+            font-size: 1rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .alphabet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 8px;
+        }
+
+        .letter-pill {
+            border: 2px solid #000;
+            border-radius: 6px;
+            padding: 8px 4px;
+            text-align: center;
+            background: #fffdf0;
+            box-shadow: 2px 2px 0px #000;
+            font-weight: 900;
+            font-size: 1.1rem;
+        }
+
+        .letter-pill span {
+            display: block;
+            font-size: 0.65rem;
+            color: #555;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        /* Retro Manual / Instructions Card */
+        .manual-card {
+            width: 100%;
+            background: #fffcee;
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: var(--hard-shadow-sm);
+            border-radius: 10px;
+            padding: 18px 22px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .manual-card h3 {
+            font-size: 0.95rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .manual-card ul {
+            padding-left: 20px;
+            font-weight: 600;
+        }
+
+        .manual-card li {
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="title-badge">NEUBRUTALISM EDITION // ZERO-PURPLE GUARANTEE</div>
+        <h1>American Sign Language Translator</h1>
+        <p>Real-Time ASL Alphabet Recognition & Neural Translation</p>
+    </header>
+
+    <div class="main-container">
+        <!-- Live Video Card -->
+        <div class="video-card">
+            <div class="video-header-bar">
+                <div class="live-tag">
+                    <span class="live-dot"></span>
+                    <span>LIVE CAMERA FEED</span>
+                </div>
+                <div class="sign-status-badge" id="sign-status">
+                    SCANNING...
+                </div>
+            </div>
+            <div class="video-feed-wrapper">
+                <img id="video-feed" src="{{ url_for('video_feed') }}" alt="Camera Stream">
+            </div>
+        </div>
+
+        <!-- Translation Card -->
+        <div class="output-card">
+            <div class="output-card-header">
+                <div class="output-title">DETECTED SENTENCE</div>
+            </div>
+
+            <div id="translation" class="translation-box empty">
+                WAITING FOR SIGNS...
+            </div>
+
+            <div class="controls-grid">
+                <button class="btn btn-speak" onclick="speakTranslation()">
+                    🔊 SPEAK (TTS)
+                </button>
+                <button class="btn btn-copy" onclick="copyTranslation()">
+                    📋 COPY TEXT
+                </button>
+                <button class="btn btn-space" onclick="addSpace()">
+                    ␣ SPACE
+                </button>
+                <button class="btn btn-backspace" onclick="backspace()">
+                    ⌫ BACKSPACE
+                </button>
+                <button class="btn btn-clear" onclick="resetTranslation()">
+                    ✕ CLEAR
+                </button>
+                <button class="btn btn-toggle-guide" onclick="toggleGuide()">
+                    📖 TOGGLE ASL ALPHABET CHEAT-SHEET (A–Z)
+                </button>
+            </div>
+        </div>
+
+        <!-- Collapsible Alphabet Cheat Sheet -->
+        <div class="alphabet-guide-card" id="alphabet-guide">
+            <div class="guide-header">
+                <span>🤟 ASL 26-LETTER REFERENCE INDEX</span>
+                <span style="font-size: 0.8rem; background: var(--nb-yellow); padding: 2px 8px; border: 2px solid #000; border-radius: 4px;">26 CLASSES</span>
+            </div>
+            <div class="alphabet-grid" id="alphabet-grid">
+                <!-- Injected via JavaScript -->
+            </div>
+        </div>
+
+        <!-- Operator Manual Card -->
+        <div class="manual-card">
+            <h3>⚡ OPERATOR GUIDE:</h3>
+            <ul>
+                <li>Show your hand clearly in front of the camera with good lighting.</li>
+                <li>Hold a sign steadily for ~0.4s (watch the progress bar fill) to register a letter.</li>
+                <li>Pause signing for 2.5s or click <strong>SPACE</strong> to finish the word and auto-correct typos.</li>
+                <li>Click <strong>SPEAK</strong> to listen to the browser's speech synthesizer read your translation out loud!</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let currentTranslationText = "";
+
+        // Populate Alphabet Reference Grid
+        const alphabetGrid = document.getElementById('alphabet-grid');
+        const hints = {
+            'A': 'Fist, thumb at side', 'B': 'Flat 4, thumb across', 'C': 'Curved C arch', 'D': 'Index up, ring loop',
+            'E': 'Curled on thumb', 'F': 'Index+thumb, 3 up', 'G': 'Index+thumb sideways', 'H': 'Index+middle sideways',
+            'I': 'Pinky straight up', 'J': 'Pinky draws J hook', 'K': 'Index up, middle out', 'L': 'Index & thumb L',
+            'M': '3 fingers over thumb', 'N': '2 fingers over thumb', 'O': 'All fingers O loop', 'P': 'K pointing down',
+            'Q': 'G pointing down', 'R': 'Cross index+middle', 'S': 'Fist, thumb across', 'T': 'Thumb betw 1 & 2',
+            'U': 'Index+middle pressed', 'V': 'V / Peace sign', 'W': '3 fingers W shape', 'X': 'Index hooked',
+            'Y': 'Thumb & pinky shaka', 'Z': 'Index traces Z'
+        };
+
+        for (let i = 0; i < 26; i++) {
+            const letter = String.fromCharCode(65 + i);
+            const pill = document.createElement('div');
+            pill.className = 'letter-pill';
+            pill.innerHTML = `${letter}<span>${hints[letter] || 'Sign'}</span>`;
+            alphabetGrid.appendChild(pill);
+        }
+
+        function toggleGuide() {
+            const guide = document.getElementById('alphabet-guide');
+            guide.classList.toggle('open');
+        }
+
+        function updateTranslation() {
+            fetch('/get_translation')
+                .then(res => res.json())
+                .then(data => {
+                    const transEl = document.getElementById('translation');
+                    const statusEl = document.getElementById('sign-status');
+
+                    currentTranslationText = data.translation || "";
+
+                    if (currentTranslationText.trim().length > 0) {
+                        transEl.textContent = currentTranslationText.toUpperCase();
+                        transEl.classList.remove('empty');
+                    } else {
+                        transEl.textContent = "WAITING FOR SIGNS...";
+                        transEl.classList.add('empty');
+                    }
+
+                    if (data.current_letter) {
+                        statusEl.textContent = `SIGN: ${data.current_letter} (${data.confidence}%)`;
+                    } else {
+                        statusEl.textContent = "SCANNING...";
+                    }
+                })
+                .catch(err => {
+                    console.warn("Polling error:", err);
+                });
+        }
+
+        function speakTranslation() {
+            if (!currentTranslationText || currentTranslationText.trim() === "") {
+                return;
+            }
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(currentTranslationText);
+                utterance.rate = 0.95;
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert("Text-to-speech is not supported by this browser.");
+            }
+        }
+
+        function copyTranslation() {
+            if (!currentTranslationText || currentTranslationText.trim() === "") return;
+            navigator.clipboard.writeText(currentTranslationText).then(() => {
+                alert("COPIED TO CLIPBOARD!");
+            });
+        }
+
+        function addSpace() {
+            fetch('/add_space', { method: 'POST' }).then(() => updateTranslation());
+        }
+
+        function backspace() {
+            fetch('/backspace', { method: 'POST' }).then(() => updateTranslation());
+        }
+
+        function resetTranslation() {
+            fetch('/reset', { method: 'POST' }).then(() => {
+                const transEl = document.getElementById('translation');
+                transEl.textContent = "WAITING FOR SIGNS...";
+                transEl.classList.add('empty');
+                currentTranslationText = "";
+            });
+        }
+
+        // Poll every 400ms
+        setInterval(updateTranslation, 400);
+        updateTranslation();
+    </script>
+</body>
+</html>

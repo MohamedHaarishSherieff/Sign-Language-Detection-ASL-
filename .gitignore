@@ -1,0 +1,31 @@
+# Python Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Matplotlib & cache directories
+.mplconfig/
+.cache/
+
+# Large Archives & External Datasets (>100MB limit on GitHub)
+*.zip
+*.tar.gz
+datasets/
+archive_experiments/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor settings
+.vscode/
+.idea/
+*.swp
